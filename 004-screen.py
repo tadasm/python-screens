@@ -1,0 +1,151 @@
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any
+
+FX_TO_EUR = {"EUR": 1.0, "USD": 0.9, "GBP": 1.15}
+
+RAW_EVENTS = [
+    {
+        "event_id": "e1",
+        "timestamp": "2026-02-10T10:00:00Z",
+        "type": "Purchase",
+        "user_id": "u1",
+        "product": {"sku": "p1"},
+        "amount": "10.00",
+        "currency": "EUR",
+    },
+    {
+        "event_id": "e2",
+        "ts": 1707568800,  # epoch seconds
+        "eventType": "VIEW",
+        "user": {"id": "u2"},
+        "product_id": "p2",
+    },
+    {
+        "event_id": "e3",
+        "timestamp": "2026-02-10T11:00:00Z",
+        "type": "purchase",
+        "user_id": None,
+        "product_id": "p3",
+        "amount": 12,
+        "currency": "USD",
+    },
+    {"event_id": "e4", "timestamp": None, "type": "view", "user_id": "u1", "product_id": "p1"},
+    {
+        "timestamp": "2026-02-10T12:00:00Z",
+        "type": "purchase",
+        "user_id": "u3",
+        "product_id": "p9",
+        "amount": 5,
+        "currency": "GBP",
+    },
+    {
+        "event_id": "e5",
+        "timestamp": "2026-02-10T12:30:00Z",
+        "type": "refund",
+        "user_id": "u1",
+        "product_id": "p1",
+        "amount_eur": -10.0,
+    },
+]
+
+def normalise_events(raw_events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Return a list of dicts with schema:
+      event_id: str (required)
+      user_id: str | None
+      ts: ISO-8601 UTC string "YYYY-MM-DDTHH:MM:SSZ" (required)
+      event_type: str (lowercase, required)
+      product_id: str | None
+      amount_eur: float | None
+
+    Rules:
+    - Drop events missing event_id or timestamp
+    - timestamp may appear as 'timestamp' ISO string or 'ts' epoch seconds
+    - event_type may appear as 'type' or 'eventType'
+    - user_id may appear as 'user_id' or user: {id: ...}
+    - product_id may appear as 'product_id' or product: {sku: ...}
+    - amount_eur: if 'amount_eur' exists use it else convert amount+currency via FX_TO_EUR
+    - Preserve input order for events kept
+    """
+    result = []
+    for raw in raw_events:
+        event_id = raw.get("event_id")
+        if not event_id:
+            continue
+
+        # Parse timestamp
+        ts_raw = raw.get("timestamp") or raw.get("ts")
+        if ts_raw is None:
+            continue
+        if isinstance(ts_raw, (int, float)):
+            ts = datetime.fromtimestamp(ts_raw, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            ts = ts_raw
+
+        # event_type
+        event_type = (raw.get("type") or raw.get("eventType", "")).lower()
+
+        # user_id
+        user_id = raw.get("user_id")
+        if user_id is None:
+            user = raw.get("user")
+            if isinstance(user, dict):
+                user_id = user.get("id")
+
+        # product_id
+        product_id = raw.get("product_id")
+        if product_id is None:
+            product = raw.get("product")
+            if isinstance(product, dict):
+                product_id = product.get("sku")
+
+        # amount_eur
+        if "amount_eur" in raw:
+            amount_eur = float(raw["amount_eur"])
+        elif "amount" in raw and "currency" in raw:
+            amount_eur = float(raw["amount"]) * FX_TO_EUR[raw["currency"]]
+        else:
+            amount_eur = None
+
+        result.append({
+            "event_id": event_id,
+            "user_id": user_id,
+            "ts": ts,
+            "event_type": event_type,
+            "product_id": product_id,
+            "amount_eur": amount_eur,
+        })
+    return result
+
+# ---------- minimal test harness ----------
+def _assert_equal(actual, expected):
+    assert actual == expected, f"\nACTUAL:\n{actual}\n\nEXPECTED:\n{expected}\n"
+
+def run_tests():
+    got = normalise_events(RAW_EVENTS)
+
+    # Expect drops: e4 (timestamp None), and the event missing event_id
+    _assert_equal([e["event_id"] for e in got], ["e1", "e2", "e3", "e5"])
+
+    # event_type normalised
+    _assert_equal([e["event_type"] for e in got], ["purchase", "view", "purchase", "refund"])
+
+    # product_id extraction
+    _assert_equal([e["product_id"] for e in got], ["p1", "p2", "p3", "p1"])
+
+    # amount conversion
+    # e1: 10 EUR -> 10.0
+    # e2: no amount -> None
+    # e3: 12 USD -> 10.8
+    # e5: amount_eur -> -10.0
+    _assert_equal([e["amount_eur"] for e in got], [10.0, None, 10.8, -10.0])
+
+    # ts formatting ends with Z
+    assert all(e["ts"].endswith("Z") for e in got), "ts must be UTC with 'Z'"
+
+    print("✅ All tests passed")
+
+if __name__ == "__main__":
+    run_tests()
