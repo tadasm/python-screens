@@ -69,55 +69,8 @@ def normalise_events(raw_events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     - amount_eur: if 'amount_eur' exists use it else convert amount+currency via FX_TO_EUR
     - Preserve input order for events kept
     """
-    result = []
-    for raw in raw_events:
-        event_id = raw.get("event_id")
-        if not event_id:
-            continue
-
-        # Parse timestamp
-        ts_raw = raw.get("timestamp") or raw.get("ts")
-        if ts_raw is None:
-            continue
-        if isinstance(ts_raw, (int, float)):
-            ts = datetime.fromtimestamp(ts_raw, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        else:
-            ts = ts_raw
-
-        # event_type
-        event_type = (raw.get("type") or raw.get("eventType", "")).lower()
-
-        # user_id
-        user_id = raw.get("user_id")
-        if user_id is None:
-            user = raw.get("user")
-            if isinstance(user, dict):
-                user_id = user.get("id")
-
-        # product_id
-        product_id = raw.get("product_id")
-        if product_id is None:
-            product = raw.get("product")
-            if isinstance(product, dict):
-                product_id = product.get("sku")
-
-        # amount_eur
-        if "amount_eur" in raw:
-            amount_eur = float(raw["amount_eur"])
-        elif "amount" in raw and "currency" in raw:
-            amount_eur = float(raw["amount"]) * FX_TO_EUR[raw["currency"]]
-        else:
-            amount_eur = None
-
-        result.append({
-            "event_id": event_id,
-            "user_id": user_id,
-            "ts": ts,
-            "event_type": event_type,
-            "product_id": product_id,
-            "amount_eur": amount_eur,
-        })
-    return result
+    # TODO: implement
+    raise NotImplementedError
 
 # ---------- minimal test harness ----------
 def _assert_equal(actual, expected):
