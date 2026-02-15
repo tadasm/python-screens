@@ -27,8 +27,6 @@ This rubric covers a structured SQL screening exercise in three stages. Start wi
 
 ## Stage 1 -- Screening Question (All Levels)
 
-*Ask the candidate verbally. No IDE or database needed.*
-
 > **"Explain the difference between WHERE and HAVING clauses in SQL."**
 
 ### Expected Answers by Level
@@ -46,10 +44,6 @@ This rubric covers a structured SQL screening exercise in three stages. Start wi
 | **Core concept** | Correctly distinguishes row-level vs group-level filtering. Red flag: confuses the two or says they are interchangeable. |
 | **Example quality** | Gives a concrete example without prompting. Red flag: cannot produce an example when asked. |
 | **Depth (mid+)** | Mentions execution order or performance implications. Red flag: only gives textbook definition with no practical insight. |
-
-**Score:** [ ] Pass / [ ] Borderline / [ ] Fail
-
-**Notes:**
 
 ---
 
@@ -129,10 +123,6 @@ HAVING SUM(amount) > 500;
 | **HAVING usage** | Uses `HAVING SUM(amount) > 500` for post-aggregation filter. Red flag: tries `WHERE SUM(amount) > 500` (syntax error). |
 | **Correct result** | Returns customers 101 and 102 with correct counts and totals. Red flag: includes cancelled orders in count/sum or wrong totals. |
 | **Code clarity** | Clean formatting, meaningful aliases. Messy or unreadable is not a dealbreaker on its own. |
-
-**Score:** [ ] Pass / [ ] Borderline / [ ] Fail
-
-**Notes:**
 
 ---
 
@@ -252,32 +242,3 @@ ORDER BY region, total_spent DESC;
 | **HAVING at both levels** | HAVING for >=EUR300 per customer, HAVING for >=2 customers per region. Red flag: misses one of the two aggregation levels. |
 | **Date handling** | Correct date range; bonus if mentions BETWEEN inclusivity edge case. Red flag: wrong date range (e.g. includes April or misses March). |
 | **Code quality** | Uses CTE over nested subqueries (readability). Meaningful aliases. Deeply nested subqueries that are hard to follow is a minor concern. |
-
-**Score:** [ ] Pass / [ ] Borderline / [ ] Fail
-
-**Notes:**
-
----
-
-## Overall Assessment
-
-### Scoring Summary
-
-| Stage | Pass | Borderline | Fail |
-|-------|------|------------|------|
-| Stage 1 -- Screening | [ ] | [ ] | [ ] |
-| Stage 2 -- Junior Exercise | [ ] | [ ] | [ ] |
-| Stage 3 -- Mid-Level Exercise | [ ] | [ ] | [ ] |
-
-### Interpretation Guide
-
-- **Junior hire:** Pass Stage 1 + Pass Stage 2. Stage 3 not required.
-- **Mid-level hire:** Pass Stage 1 + Pass Stage 2 + Pass Stage 3.
-- **No hire:** Fail at Stage 1, or Fail at Stage 2.
-- **Borderline:** Use interviewer judgment. Consider communication quality, debugging approach when stuck, and whether mistakes were self-corrected.
-
-### Overall Recommendation
-
-[ ] Strong Hire / [ ] Hire / [ ] No Hire / [ ] Strong No Hire
-
-### Final Notes
