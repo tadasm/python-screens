@@ -54,6 +54,7 @@ This rubric covers a structured SQL screening exercise in three stages. Start wi
 | 8 | 104 | 2024-03-15 | Electronics | 150.00 | completed |
 | 9 | 102 | 2024-04-01 | Electronics | 500.00 | completed |
 | 10 | 103 | 2024-04-10 | Clothing | 90.00 | cancelled |
+| 11 | 102 | 2024-02-15 | Electronics | NULL | completed |
 
 ### DDL -- Share with Candidate
 
@@ -63,7 +64,7 @@ CREATE TABLE orders (
     customer_id     INT NOT NULL,
     order_date      DATE NOT NULL,
     product_category VARCHAR(50) NOT NULL,
-    amount          DECIMAL(10,2) NOT NULL,
+    amount          DECIMAL(10,2),
     status          VARCHAR(20) NOT NULL
 );
 
@@ -77,7 +78,8 @@ INSERT INTO orders (order_id, customer_id, order_date, product_category, amount,
 (7,  103, '2024-03-12', 'Clothing',     60.00, 'completed'),
 (8,  104, '2024-03-15', 'Electronics', 150.00, 'completed'),
 (9,  102, '2024-04-01', 'Electronics', 500.00, 'completed'),
-(10, 103, '2024-04-10', 'Clothing',     90.00, 'cancelled');
+(10, 103, '2024-04-10', 'Clothing',     90.00, 'cancelled'),
+(11, 102, '2024-02-15', 'Electronics',   NULL, 'completed');
 ```
 
 ### Question
@@ -86,10 +88,26 @@ INSERT INTO orders (order_id, customer_id, order_date, product_category, amount,
 
 ### Expected Answer
 
+Note that order 11 has a NULL amount. `SUM` ignores NULLs, so total_spent is unaffected -- but `COUNT(*)` includes the NULL row, inflating the order count for customer 102 (4 instead of 3). The candidate should handle this by filtering NULLs in WHERE or by using `COUNT(amount)` instead of `COUNT(*)`.
+
 ```sql
 SELECT
     customer_id,
     COUNT(*) AS order_count,
+    SUM(amount) AS total_spent
+FROM orders
+WHERE status = 'completed'
+  AND amount IS NOT NULL
+GROUP BY customer_id
+HAVING SUM(amount) > 500;
+```
+
+Using `COUNT(amount)` without the WHERE filter is equally correct:
+
+```sql
+SELECT
+    customer_id,
+    COUNT(amount) AS order_count,
     SUM(amount) AS total_spent
 FROM orders
 WHERE status = 'completed'
@@ -104,12 +122,15 @@ HAVING SUM(amount) > 500;
 | 101 | 2 | 650.00 |
 | 102 | 3 | 660.00 |
 
+**Common mistake** -- if the candidate uses `COUNT(*)` without filtering NULLs, customer 102 shows `order_count = 4` instead of 3. The total_spent is still correct (660.00) because SUM ignores NULLs.
+
 ### Evaluation
 
 | Criterion | What to look for |
 |-----------|-----------------|
 | **WHERE usage** | Filters `status = 'completed'` in WHERE (before aggregation). Red flag: puts status filter in HAVING or filters after grouping. |
 | **HAVING usage** | Uses `HAVING SUM(amount) > 500` for post-aggregation filter. Red flag: tries `WHERE SUM(amount) > 500` (syntax error). |
+| **NULL handling** | Notices the NULL amount in the data and handles it -- either filters `amount IS NOT NULL` in WHERE, or uses `COUNT(amount)` instead of `COUNT(*)`. Bonus: explains why SUM ignores NULLs but COUNT(*) does not. Red flag: does not notice the NULL at all, even after seeing a suspicious order_count of 4 for customer 102. |
 | **Correct result** | Returns customers 101 and 102 with correct counts and totals. Red flag: includes cancelled orders in count/sum or wrong totals. |
 | **Code clarity** | Clean formatting, meaningful aliases. Messy or unreadable is not a dealbreaker on its own. |
 
@@ -230,8 +251,9 @@ ORDER BY region, total_spent DESC;
 | 6 | 101 | North | 400.00 |
 | 7 | 103 | North | 60.00 |
 | 8 | 104 | South | 150.00 |
+| 11 | 102 | South | NULL |
 
-*Orders 3 and 10 excluded (cancelled). Order 9 excluded (April).*
+*Orders 3 and 10 excluded (cancelled). Order 9 excluded (April). Order 11 included (completed, Q1) but has NULL amount -- SUM ignores it, so Bob's total is unaffected.*
 
 **Step 2 -- Aggregate per customer per region, keep >=EUR300:**
 
