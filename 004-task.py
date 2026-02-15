@@ -68,6 +68,8 @@ def normalise_events(raw_events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     - product_id may appear as 'product_id' or product: {sku: ...}
     - amount_eur: if 'amount_eur' exists use it else convert amount+currency via FX_TO_EUR
     - Preserve input order for events kept
+
+    Hint: start with filtering, then field mapping, then amount conversion.
     """
     # TODO: implement
     raise NotImplementedError
