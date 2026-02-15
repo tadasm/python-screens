@@ -2,17 +2,6 @@
 
 **WHERE vs HAVING -- Screening + Practical Exercises**
 
----
-
-| Field | Value |
-|-------|-------|
-| **Candidate Name** | |
-| **Date** | |
-| **Target Level** | [ ] Junior / [ ] Mid / [ ] Senior |
-| **Interviewer** | |
-
----
-
 ## Overview
 
 This rubric covers a structured SQL screening exercise in three stages. Start with the screening question for all candidates. Continue to Exercise 1 (junior level). If the candidate performs well, proceed to Exercise 2 (mid level). Each stage builds on the previous one.
