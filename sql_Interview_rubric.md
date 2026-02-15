@@ -238,6 +238,73 @@ WHERE customers_in_region >= 2
 ORDER BY region, total_spent DESC;
 ```
 
+**Approach C -- Two CTEs + JOIN:**
+
+Materialises qualifying regions in a second CTE and JOINs back. Some candidates find this more readable than WHERE IN.
+
+```sql
+WITH customer_spend AS (
+    SELECT
+        c.region,
+        c.customer_name,
+        SUM(o.amount) AS total_spent
+    FROM orders o
+    JOIN customers c ON o.customer_id = c.customer_id
+    WHERE o.status = 'completed'
+      AND o.order_date BETWEEN '2024-01-01' AND '2024-03-31'
+    GROUP BY c.region, c.customer_name
+    HAVING SUM(o.amount) >= 300
+),
+qualifying_regions AS (
+    SELECT region
+    FROM customer_spend
+    GROUP BY region
+    HAVING COUNT(*) >= 2
+)
+SELECT cs.region, cs.customer_name, cs.total_spent
+FROM customer_spend cs
+JOIN qualifying_regions qr ON cs.region = qr.region
+ORDER BY cs.region, cs.total_spent DESC;
+```
+
+**Approach D -- Nested subqueries (no CTE):**
+
+Valid but less readable because the inner query is repeated. If a candidate writes this, it works -- but it is a good prompt to ask whether they know of a way to avoid the duplication (leading to CTEs).
+
+```sql
+SELECT region, customer_name, total_spent
+FROM (
+    SELECT
+        c.region,
+        c.customer_name,
+        SUM(o.amount) AS total_spent
+    FROM orders o
+    JOIN customers c ON o.customer_id = c.customer_id
+    WHERE o.status = 'completed'
+      AND o.order_date BETWEEN '2024-01-01' AND '2024-03-31'
+    GROUP BY c.region, c.customer_name
+    HAVING SUM(o.amount) >= 300
+) AS customer_spend
+WHERE region IN (
+    SELECT region
+    FROM (
+        SELECT
+            c.region,
+            c.customer_name,
+            SUM(o.amount) AS total_spent
+        FROM orders o
+        JOIN customers c ON o.customer_id = c.customer_id
+        WHERE o.status = 'completed'
+          AND o.order_date BETWEEN '2024-01-01' AND '2024-03-31'
+        GROUP BY c.region, c.customer_name
+        HAVING SUM(o.amount) >= 300
+    ) AS qualified
+    GROUP BY region
+    HAVING COUNT(*) >= 2
+)
+ORDER BY region, total_spent DESC;
+```
+
 ### Step-by-Step Walkthrough
 
 **Step 1 -- Completed orders in Q1 2024 (after WHERE, before aggregation):**
