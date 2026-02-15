@@ -156,6 +156,10 @@ The candidate must recognise this cannot be solved in a single GROUP BY. There a
 
 ### Expected Answer
 
+Any approach that produces correct results and demonstrates awareness of the two-pass requirement is acceptable. Below is one solution using a CTE with a subquery. Alternatives include window functions (e.g. `COUNT(*) OVER (PARTITION BY region)`), self-joins, or nested subqueries. Do not penalise a candidate for choosing a different approach.
+
+**Approach A -- CTE + subquery:**
+
 ```sql
 WITH customer_region_spend AS (
     SELECT
@@ -181,6 +185,35 @@ WHERE region IN (
     GROUP BY region
     HAVING COUNT(*) >= 2
 )
+ORDER BY region, total_spent DESC;
+```
+
+**Approach B -- Window function:**
+
+```sql
+WITH customer_region_spend AS (
+    SELECT
+        c.region,
+        c.customer_name,
+        SUM(o.amount) AS total_spent
+    FROM orders o
+    JOIN customers c ON o.customer_id = c.customer_id
+    WHERE o.status = 'completed'
+      AND o.order_date BETWEEN '2024-01-01' AND '2024-03-31'
+    GROUP BY c.region, c.customer_name
+    HAVING SUM(o.amount) >= 300
+),
+with_count AS (
+    SELECT
+        region,
+        customer_name,
+        total_spent,
+        COUNT(*) OVER (PARTITION BY region) AS customers_in_region
+    FROM customer_region_spend
+)
+SELECT region, customer_name, total_spent
+FROM with_count
+WHERE customers_in_region >= 2
 ORDER BY region, total_spent DESC;
 ```
 
@@ -229,5 +262,5 @@ ORDER BY region, total_spent DESC;
 | **JOIN correctness** | Correctly joins orders to customers on customer_id. Red flag: incorrect join condition or misses the join entirely. |
 | **WHERE placement** | Status and date filters in WHERE (row-level, before aggregation). Red flag: puts row-level filters in HAVING. |
 | **HAVING at both levels** | HAVING for >=EUR300 per customer, HAVING for >=2 customers per region. Red flag: misses one of the two aggregation levels. |
-| **Date handling** | Correct date range; bonus if mentions BETWEEN inclusivity edge case. Red flag: wrong date range (e.g. includes April or misses March). |
+| **Date handling** | Correct date range. Bonus if the candidate notes that `BETWEEN '2024-01-01' AND '2024-03-31'` is safe for DATE columns but would silently miss rows after midnight on March 31 if the column were TIMESTAMP (where `< '2024-04-01'` is safer). Red flag: wrong date range (e.g. includes April or misses March). |
 | **Code quality** | Uses CTE over nested subqueries (readability). Meaningful aliases. Deeply nested subqueries that are hard to follow is a minor concern. |
