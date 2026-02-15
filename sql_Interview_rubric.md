@@ -19,33 +19,19 @@ This rubric covers a structured SQL screening exercise in four stages. Start wit
 
 > **"Explain the difference between WHERE and HAVING clauses in SQL."**
 
-### Expected Answers by Level
-
-| Level | What to look for |
-|-------|-----------------|
-| **Junior** | Articulates the basic distinction: WHERE filters rows before grouping, HAVING filters groups after aggregation. Can give a simple example using COUNT or SUM. Imprecise wording is acceptable if the core concept is correct. |
-| **Mid-Level** | Explains the logical query execution order (FROM -> WHERE -> GROUP BY -> HAVING -> SELECT -> ORDER BY). Explains why WHERE cannot reference aggregates. Mentions the performance implication: WHERE reduces the dataset before aggregation, making it more efficient than equivalent filtering in HAVING. |
-
 ### Evaluation
 
 | Criterion | Strong answer | Weak answer |
 |-----------|---------------|-------------|
-| **Core concept** | Correctly distinguishes row-level vs group-level filtering. | Confuses the two or says they are interchangeable. |
-| **Example quality** | Gives a concrete example without prompting. | Cannot produce an example when asked. |
-| **Depth (mid+)** | Mentions execution order or performance implications. | Only gives textbook definition with no practical insight. |
+| **Core concept** | Candidate says WHERE filters individual rows *before* grouping and HAVING filters groups *after* aggregation. They don't need to use these exact words -- any phrasing that shows they understand the timing difference is a pass. Imprecise wording is fine as long as the core idea is correct. | Candidate confuses the two, says they are interchangeable, or cannot explain which one runs first. If they get this wrong, stop here -- do not continue to the exercises. |
+| **Example** | Candidate gives a concrete example without being asked, e.g. "WHERE filters out cancelled orders, HAVING keeps only groups with COUNT > 5." The example doesn't need to be runnable SQL -- a clear verbal description is enough. | Candidate cannot produce any example, even when prompted with "Can you give me a quick example of when you'd use each one?" |
+| **Execution order (mid+)** | Candidate explains the logical query execution order (FROM -> WHERE -> GROUP BY -> HAVING -> SELECT -> ORDER BY) and can explain *why* you can't put an aggregate like SUM() in a WHERE clause -- because WHERE runs before GROUP BY, so aggregates don't exist yet. Bonus: mentions that WHERE is more efficient because it reduces the dataset before the engine has to do the grouping work. | Candidate only recites "WHERE is for rows, HAVING is for groups" with no deeper reasoning. Acceptable for junior, but insufficient for mid-level -- a mid-level candidate should be able to explain the *why*, not just the *what*. |
 
 ---
 
 ## Stage 2 -- Screening Question: JOIN Row Expansion (All Levels)
 
 > **"If you JOIN table A (1,000 rows) to table B (5,000 rows), can the result have more than 5,000 rows? When and why?"**
-
-### Expected Answers by Level
-
-| Level | What to look for |
-|-------|-----------------|
-| **Junior** | Says yes, it can. Explains that duplicate keys cause rows to multiply -- each matching pair produces a row. May use terms like "many-to-many" or "one-to-many" even if imprecisely. Imprecise wording is acceptable if they grasp that duplicates on the join key cause row expansion. |
-| **Mid-Level** | Clearly distinguishes join types (INNER, LEFT, CROSS). Explains that a many-to-many relationship on the join key produces a Cartesian product *per key value*, so the result size is the sum of (count_A × count_B) for each key. May mention real-world consequences such as inflated aggregates or double-counting. May mention how to detect or prevent it (e.g. checking for duplicate keys before joining, using DISTINCT, or adding a grain constraint). |
 
 ### Example
 
@@ -113,9 +99,9 @@ Each of the 3 orders matches each of the 2 promos on `customer_id = 10`, produci
 
 | Criterion | Strong answer | Weak answer |
 |-----------|---------------|-------------|
-| **Core concept** | Correctly identifies that duplicate join keys cause row multiplication. | Says the result is always capped at the size of the larger table, or says "no" outright. |
-| **Example quality** | Can describe a scenario where this happens (e.g. "if a customer has multiple orders and multiple addresses"). | Cannot explain *when* it would happen. |
-| **Depth (mid+)** | Mentions Cartesian product per key value, real-world consequences like inflated aggregates, or strategies to detect/prevent it. | Only gives a vague "yes, duplicates" with no practical insight. |
+| **Core concept** | Candidate immediately says "yes" and explains that when multiple rows in table A match multiple rows in table B on the join key, every combination is produced. They might say "duplicates on the join key cause row multiplication" or use terms like "one-to-many" or "many-to-many" -- exact terminology doesn't matter as long as the mechanism is clear. | Candidate says "no, the result can't be larger than the bigger table" or says "it's always capped at 5,000." This is a fundamental misunderstanding of how JOINs work -- if they hold this position after a prompt, stop here. |
+| **Example** | Candidate describes a concrete scenario without being asked, e.g. "if a customer has 3 orders and 2 shipping addresses, joining on customer_id gives 6 rows for that customer." A verbal description is enough -- they don't need to write SQL. | Candidate cannot explain *when* row expansion would happen, even when prompted with "Can you describe a situation where this might occur?" |
+| **Depth (mid+)** | Candidate explains the Cartesian product per key value, or mentions real-world consequences like inflated aggregates and double-counting revenue. Bonus: mentions strategies to prevent it -- checking for duplicate keys before joining, using DISTINCT, or verifying the grain of each table. | Candidate gives only a vague "yes, because of duplicates" with no practical insight into why it matters or how to detect it. Acceptable for junior, but insufficient for mid-level. |
 
 ---
 
