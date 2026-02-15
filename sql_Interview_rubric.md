@@ -35,7 +35,7 @@ This rubric covers a structured SQL screening exercise in four stages. Start wit
 
 ### Example
 
-**Table: `orders` (3 rows)**
+**Table: `orders_example` (3 rows)**
 
 | order_id | customer_id |
 |----------|-------------|
