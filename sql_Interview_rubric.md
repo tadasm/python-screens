@@ -8,8 +8,8 @@ This rubric covers a structured SQL screening exercise in four stages. Start wit
 
 **Interview Flow:**
 
-- **Stage 1 -- Screening Question** (5 min): Verbal question about WHERE vs HAVING. Gate to continue.
-- **Stage 2 -- Screening Question** (5 min): Verbal question about JOIN row expansion. Gate to continue.
+- **Stage 1 -- Screening Question** (5 min): Verbal question about WHERE vs HAVING. 
+- **Stage 2 -- Screening Question** (5 min): Verbal question about JOIN row expansion. 
 - **Stage 3 -- Exercise 1: Junior** (10-15 min): Write a query using a single table. Candidate uses their own DB tool.
 - **Stage 4 -- Exercise 2: Mid-Level** (15-20 min): Write a query using two tables with two-level aggregation.
 
@@ -28,11 +28,11 @@ This rubric covers a structured SQL screening exercise in four stages. Start wit
 
 ### Evaluation
 
-| Criterion | What to look for |
-|-----------|-----------------|
-| **Core concept** | Correctly distinguishes row-level vs group-level filtering. Red flag: confuses the two or says they are interchangeable. |
-| **Example quality** | Gives a concrete example without prompting. Red flag: cannot produce an example when asked. |
-| **Depth (mid+)** | Mentions execution order or performance implications. Red flag: only gives textbook definition with no practical insight. |
+| Criterion | Strong answer | Weak answer |
+|-----------|---------------|-------------|
+| **Core concept** | Correctly distinguishes row-level vs group-level filtering. | Confuses the two or says they are interchangeable. |
+| **Example quality** | Gives a concrete example without prompting. | Cannot produce an example when asked. |
+| **Depth (mid+)** | Mentions execution order or performance implications. | Only gives textbook definition with no practical insight. |
 
 ---
 
@@ -111,11 +111,11 @@ Each of the 3 orders matches each of the 2 promos on `customer_id = 10`, produci
 
 ### Evaluation
 
-| Criterion | What to look for |
-|-----------|-----------------|
-| **Core concept** | Correctly identifies that duplicate join keys cause row multiplication. Red flag: says the result is always capped at the size of the larger table, or says "no" outright. |
-| **Example quality** | Can describe a scenario where this happens (e.g. "if a customer has multiple orders and multiple addresses"). Red flag: cannot explain *when* it would happen. |
-| **Depth (mid+)** | Mentions Cartesian product per key value, real-world consequences like inflated aggregates, or strategies to detect/prevent it. Red flag: only gives a vague "yes, duplicates" with no practical insight. |
+| Criterion | Strong answer | Weak answer |
+|-----------|---------------|-------------|
+| **Core concept** | Correctly identifies that duplicate join keys cause row multiplication. | Says the result is always capped at the size of the larger table, or says "no" outright. |
+| **Example quality** | Can describe a scenario where this happens (e.g. "if a customer has multiple orders and multiple addresses"). | Cannot explain *when* it would happen. |
+| **Depth (mid+)** | Mentions Cartesian product per key value, real-world consequences like inflated aggregates, or strategies to detect/prevent it. | Only gives a vague "yes, duplicates" with no practical insight. |
 
 ---
 
@@ -225,13 +225,13 @@ WHERE total_spent > 500;
 
 ### Evaluation
 
-| Criterion | What to look for |
-|-----------|-----------------|
-| **WHERE usage** | Filters `status = 'completed'` in WHERE (before aggregation). Red flag: puts status filter in HAVING or filters after grouping. |
-| **HAVING usage** | Uses `HAVING SUM(amount) > 500` for post-aggregation filter. If the candidate uses a subquery to avoid HAVING (see answer above), ask them to rewrite using HAVING. Red flag: tries `WHERE SUM(amount) > 500` directly on the grouped query (syntax error), or cannot produce a HAVING version when asked. |
-| **NULL handling** | Notices the NULL amount in the data and handles it -- either filters `amount IS NOT NULL` in WHERE, or uses `COUNT(amount)` instead of `COUNT(*)`. Bonus: explains why SUM ignores NULLs but COUNT(*) does not. Red flag: does not notice the NULL at all, even after seeing a suspicious order_count of 4 for customer 102. |
-| **Correct result** | Returns customers 101 and 102 with correct counts and totals. Red flag: includes cancelled orders in count/sum or wrong totals. |
-| **Code clarity** | Clean formatting, meaningful aliases. Messy or unreadable is not a dealbreaker on its own. |
+| Criterion | Strong answer | Weak answer |
+|-----------|---------------|-------------|
+| **WHERE usage** | Filters `status = 'completed'` in WHERE (before aggregation). | Puts status filter in HAVING or filters after grouping. |
+| **HAVING usage** | Uses `HAVING SUM(amount) > 500` for post-aggregation filter. If the candidate uses a subquery to avoid HAVING (see answer above), ask them to rewrite using HAVING. | Tries `WHERE SUM(amount) > 500` directly on the grouped query (syntax error), or cannot produce a HAVING version when asked. |
+| **NULL handling** | Notices the NULL amount and handles it -- either filters `amount IS NOT NULL` in WHERE, or uses `COUNT(amount)` instead of `COUNT(*)`. Bonus: explains why SUM ignores NULLs but COUNT(*) does not. | Does not notice the NULL at all, even after seeing a suspicious order_count of 4 for customer 102. |
+| **Correct result** | Returns customers 101 and 102 with correct counts and totals. | Includes cancelled orders in count/sum or wrong totals. |
+| **Code clarity** | Clean formatting, meaningful aliases. | Messy or unreadable. Not a dealbreaker on its own. |
 
 ---
 
@@ -450,11 +450,11 @@ ORDER BY region, total_spent DESC;
 
 ### Evaluation
 
-| Criterion | What to look for |
-|-----------|-----------------|
-| **Recognises two-pass problem** | Uses CTE or subquery; explains why single GROUP BY won't work. Red flag: tries to solve in one pass and gets stuck or produces wrong results. |
-| **JOIN correctness** | Correctly joins orders to customers on customer_id. Red flag: incorrect join condition or misses the join entirely. |
-| **WHERE placement** | Status and date filters in WHERE (row-level, before aggregation). Red flag: puts row-level filters in HAVING. |
-| **HAVING at both levels** | HAVING for >=EUR300 per customer, HAVING for >=2 customers per region. Red flag: misses one of the two aggregation levels. |
-| **Date handling** | Correct date range. Preferred pattern is `>= '2024-01-01' AND < '2024-04-01'` (half-open interval) because it is safe for both DATE and TIMESTAMP columns. Using `BETWEEN '2024-01-01' AND '2024-03-31'` is acceptable -- it produces correct results here since the column is DATE, but note that BETWEEN would silently miss rows after midnight on March 31 if the column were TIMESTAMP. Red flag: wrong date range (e.g. includes April or misses March). |
-| **Code quality** | Uses CTE over nested subqueries (readability). Meaningful aliases. Deeply nested subqueries that are hard to follow is a minor concern. |
+| Criterion | Strong answer | Weak answer |
+|-----------|---------------|-------------|
+| **Recognises two-pass problem** | Uses CTE or subquery; explains why single GROUP BY won't work. | Tries to solve in one pass and gets stuck or produces wrong results. |
+| **JOIN correctness** | Correctly joins orders to customers on customer_id. | Incorrect join condition or misses the join entirely. |
+| **WHERE placement** | Status and date filters in WHERE (row-level, before aggregation). | Puts row-level filters in HAVING. |
+| **HAVING at both levels** | HAVING for >=EUR300 per customer, HAVING for >=2 customers per region. | Misses one of the two aggregation levels. |
+| **Date handling** | Correct date range. Preferred pattern is `>= '2024-01-01' AND < '2024-04-01'` (half-open interval) because it is safe for both DATE and TIMESTAMP columns. `BETWEEN '2024-01-01' AND '2024-03-31'` is acceptable since the column is DATE, but note BETWEEN would silently miss rows after midnight on March 31 if the column were TIMESTAMP. | Wrong date range (e.g. includes April or misses March). |
+| **Code quality** | Uses CTE over nested subqueries (readability). Meaningful aliases. | Deeply nested subqueries that are hard to follow. Minor concern on its own. |
