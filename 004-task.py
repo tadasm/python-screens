@@ -87,6 +87,10 @@ def run_tests():
     # event_type normalised
     _assert_equal([e["event_type"] for e in got], ["purchase", "view", "purchase", "refund"])
 
+    # user_id extraction (flat user_id and nested user: {id: ...})
+    # e1: user_id "u1", e2: user.id "u2", e3: user_id None, e5: user_id "u1"
+    _assert_equal([e["user_id"] for e in got], ["u1", "u2", None, "u1"])
+
     # product_id extraction
     _assert_equal([e["product_id"] for e in got], ["p1", "p2", "p3", "p1"])
 
@@ -106,6 +110,11 @@ def run_tests():
         [e["ts"] for e in got],
         ["2026-02-10T10:00:00Z", "2026-02-10T12:00:00Z", "2026-02-10T11:00:00Z", "2026-02-10T12:30:00Z"],
     )
+
+    # output schema: each event must have exactly the 6 required keys
+    expected_keys = {"event_id", "user_id", "ts", "event_type", "product_id", "amount_eur"}
+    for e in got:
+        _assert_equal(set(e.keys()), expected_keys)
 
     print("✅ All tests passed")
 
