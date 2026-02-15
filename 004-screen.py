@@ -17,7 +17,7 @@ RAW_EVENTS = [
     },
     {
         "event_id": "e2",
-        "ts": 1707568800,  # epoch seconds
+        "ts": 1770724800,  # epoch seconds
         "eventType": "VIEW",
         "user": {"id": "u2"},
         "product_id": "p2",
