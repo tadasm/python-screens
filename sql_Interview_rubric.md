@@ -4,13 +4,14 @@
 
 ## Overview
 
-This rubric covers a structured SQL screening exercise in three stages. Start with the screening question for all candidates. Continue to Exercise 1 (junior level). If the candidate performs well, proceed to Exercise 2 (mid level). Each stage builds on the previous one.
+This rubric covers a structured SQL screening exercise in four stages. Start with the screening questions (Stages 1-2) for all candidates. Continue to Exercise 1 (junior level). If the candidate performs well, proceed to Exercise 2 (mid level). Each stage builds on the previous one.
 
 **Interview Flow:**
 
 - **Stage 1 -- Screening Question** (5 min): Verbal question about WHERE vs HAVING. Gate to continue.
-- **Stage 2 -- Exercise 1: Junior** (10-15 min): Write a query using a single table. Candidate uses their own DB tool.
-- **Stage 3 -- Exercise 2: Mid-Level** (15-20 min): Write a query using two tables with two-level aggregation.
+- **Stage 2 -- Screening Question** (5 min): Verbal question about JOIN row expansion. Gate to continue.
+- **Stage 3 -- Exercise 1: Junior** (10-15 min): Write a query using a single table. Candidate uses their own DB tool.
+- **Stage 4 -- Exercise 2: Mid-Level** (15-20 min): Write a query using two tables with two-level aggregation.
 
 ---
 
@@ -35,7 +36,64 @@ This rubric covers a structured SQL screening exercise in three stages. Start wi
 
 ---
 
-## Stage 2 -- Exercise 1: Junior Level
+## Stage 2 -- Screening Question: JOIN Row Expansion (All Levels)
+
+> **"If you JOIN table A (1,000 rows) to table B (5,000 rows), can the result have more than 5,000 rows? When and why?"**
+
+### Expected Answers by Level
+
+| Level | What to look for |
+|-------|-----------------|
+| **Junior** | Says yes, it can. Explains that duplicate keys cause rows to multiply -- each matching pair produces a row. May use terms like "many-to-many" or "one-to-many" even if imprecisely. Imprecise wording is acceptable if they grasp that duplicates on the join key cause row expansion. |
+| **Mid-Level** | Clearly distinguishes join types (INNER, LEFT, CROSS). Explains that a many-to-many relationship on the join key produces a Cartesian product *per key value*, so the result size is the sum of (count_A × count_B) for each key. May mention real-world consequences such as inflated aggregates or double-counting. May mention how to detect or prevent it (e.g. checking for duplicate keys before joining, using DISTINCT, or adding a grain constraint). |
+
+### Example
+
+**Table: `orders` (3 rows)**
+
+| order_id | customer_id |
+|----------|-------------|
+| 1        | 10          |
+| 2        | 10          |
+| 3        | 10          |
+
+**Table: `promos` (2 rows)**
+
+| promo_id | customer_id | discount |
+|----------|-------------|----------|
+| 1        | 10          | 5%       |
+| 2        | 10          | 10%      |
+
+```sql
+SELECT o.order_id, o.customer_id, p.promo_id, p.discount
+FROM orders o
+JOIN promos p ON o.customer_id = p.customer_id;
+```
+
+**Result: 6 rows** (exceeds both tables)
+
+| order_id | customer_id | promo_id | discount |
+|----------|-------------|----------|----------|
+| 1        | 10          | 1        | 5%       |
+| 1        | 10          | 2        | 10%      |
+| 2        | 10          | 1        | 5%       |
+| 2        | 10          | 2        | 10%      |
+| 3        | 10          | 1        | 5%       |
+| 3        | 10          | 2        | 10%      |
+
+Each of the 3 orders matches each of the 2 promos on `customer_id = 10`, producing 3 × 2 = 6 rows -- more than either input table.
+
+### Evaluation
+
+| Criterion | What to look for |
+|-----------|-----------------|
+| **Core concept** | Correctly identifies that duplicate join keys cause row multiplication. Red flag: says the result is always capped at the size of the larger table, or says "no" outright. |
+| **Example quality** | Can describe a scenario where this happens (e.g. "if a customer has multiple orders and multiple addresses"). Red flag: cannot explain *when* it would happen. |
+| **Depth (mid+)** | Mentions Cartesian product per key value, real-world consequences like inflated aggregates, or strategies to detect/prevent it. Red flag: only gives a vague "yes, duplicates" with no practical insight. |
+
+---
+
+## Stage 3 -- Exercise 1: Junior Level
 
 *Share the DDL statements below with the candidate. They should load the data into their database tool and write the query live.*
 
@@ -151,9 +209,9 @@ WHERE total_spent > 500;
 
 ---
 
-## Stage 3 -- Exercise 2: Mid-Level
+## Stage 4 -- Exercise 2: Mid-Level
 
-*This exercise adds a second table and requires two-level aggregation. Only proceed here if the candidate passed Stage 2. Share the additional DDL with the candidate.*
+*This exercise adds a second table and requires two-level aggregation. Only proceed here if the candidate passed Stage 3. Share the additional DDL with the candidate.*
 
 ### Additional Table: `customers`
 
