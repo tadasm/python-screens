@@ -97,8 +97,15 @@ def run_tests():
     # e5: amount_eur -> -10.0
     _assert_equal([e["amount_eur"] for e in got], [10.0, None, 10.8, -10.0])
 
-    # ts formatting ends with Z
-    assert all(e["ts"].endswith("Z") for e in got), "ts must be UTC with 'Z'"
+    # ts: ISO passthrough and epoch conversion
+    # e1: ISO string passed through as-is
+    # e2: epoch 1770724800 -> 2026-02-10T14:00:00Z
+    # e3: ISO string passed through as-is
+    # e5: ISO string passed through as-is
+    _assert_equal(
+        [e["ts"] for e in got],
+        ["2026-02-10T10:00:00Z", "2026-02-10T14:00:00Z", "2026-02-10T11:00:00Z", "2026-02-10T12:30:00Z"],
+    )
 
     print("✅ All tests passed")
 
