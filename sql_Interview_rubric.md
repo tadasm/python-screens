@@ -24,7 +24,6 @@ This rubric covers a structured SQL screening exercise in three stages. Start wi
 |-------|-----------------|
 | **Junior** | Articulates the basic distinction: WHERE filters rows before grouping, HAVING filters groups after aggregation. Can give a simple example using COUNT or SUM. Imprecise wording is acceptable if the core concept is correct. |
 | **Mid-Level** | Explains the logical query execution order (FROM -> WHERE -> GROUP BY -> HAVING -> SELECT -> ORDER BY). Explains why WHERE cannot reference aggregates. Mentions the performance implication: WHERE reduces the dataset before aggregation, making it more efficient than equivalent filtering in HAVING. |
-| **Senior** | Everything above, plus: discusses how query optimizers in modern engines (Spark, BigQuery, Snowflake) may rewrite HAVING conditions into WHERE when possible. May bring up predicate pushdown as a general optimization principle. May mention edge cases across SQL dialects or how window functions interact with these clauses. |
 
 ### Evaluation
 
@@ -51,7 +50,7 @@ This rubric covers a structured SQL screening exercise in three stages. Start wi
 | 5 | 102 | 2024-03-01 | Clothing | 85.00 | completed |
 | 6 | 101 | 2024-03-05 | Electronics | 400.00 | completed |
 | 7 | 103 | 2024-03-12 | Clothing | 60.00 | completed |
-| 8 | 104 | 2024-03-15 | Electronics | 150.00 | completed |
+| 8 | 104 | 2024-03-15 | Electronics | 350.00 | completed |
 | 9 | 102 | 2024-04-01 | Electronics | 500.00 | completed |
 | 10 | 103 | 2024-04-10 | Clothing | 90.00 | cancelled |
 | 11 | 102 | 2024-02-15 | Electronics | NULL | completed |
@@ -76,7 +75,7 @@ INSERT INTO orders (order_id, customer_id, order_date, product_category, amount,
 (5,  102, '2024-03-01', 'Clothing',     85.00, 'completed'),
 (6,  101, '2024-03-05', 'Electronics', 400.00, 'completed'),
 (7,  103, '2024-03-12', 'Clothing',     60.00, 'completed'),
-(8,  104, '2024-03-15', 'Electronics', 150.00, 'completed'),
+(8,  104, '2024-03-15', 'Electronics', 350.00, 'completed'),
 (9,  102, '2024-04-01', 'Electronics', 500.00, 'completed'),
 (10, 103, '2024-04-10', 'Clothing',     90.00, 'cancelled'),
 (11, 102, '2024-02-15', 'Electronics',   NULL, 'completed');
@@ -333,7 +332,7 @@ ORDER BY region, total_spent DESC;
 | 5 | 102 | South | 85.00 |
 | 6 | 101 | North | 400.00 |
 | 7 | 103 | North | 60.00 |
-| 8 | 104 | South | 150.00 |
+| 8 | 104 | South | 350.00 |
 | 11 | 102 | South | NULL |
 
 *Orders 3 and 10 excluded (cancelled). Order 9 excluded (April). Order 11 included (completed, Q1) but has NULL amount -- SUM ignores it, so Bob's total is unaffected.*
@@ -344,13 +343,14 @@ ORDER BY region, total_spent DESC;
 |--------|---------------|-------------|
 | North | Alice | 650.00 |
 | North | Carol | 360.00 |
+| South | Dave | 350.00 |
 
-*Bob: EUR75 + EUR85 = EUR160 (below threshold). Dave: EUR150 (below threshold).*
+*Bob: EUR75 + EUR85 = EUR160 (below threshold). Dave: EUR350 (meets threshold).*
 
 **Step 3 -- Which regions have >=2 qualifying customers?**
 
 - North has 2 qualifying customers (Alice and Carol) (yes)
-- South has 0 qualifying customers (no)
+- South has 1 qualifying customer (Dave) (no -- needs at least 2)
 
 ### Expected Result
 
