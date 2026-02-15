@@ -115,6 +115,22 @@ GROUP BY customer_id
 HAVING SUM(amount) > 500;
 ```
 
+A candidate may avoid HAVING entirely by wrapping the aggregation in a subquery and filtering in the outer WHERE. This is valid and produces the correct result. If they take this route, ask them to rewrite it using HAVING to confirm they understand the clause.
+
+```sql
+SELECT *
+FROM (
+    SELECT
+        customer_id,
+        COUNT(amount) AS order_count,
+        SUM(amount) AS total_spent
+    FROM orders
+    WHERE status = 'completed'
+    GROUP BY customer_id
+) sub
+WHERE total_spent > 500;
+```
+
 ### Expected Result
 
 | customer_id | order_count | total_spent |
@@ -129,7 +145,7 @@ HAVING SUM(amount) > 500;
 | Criterion | What to look for |
 |-----------|-----------------|
 | **WHERE usage** | Filters `status = 'completed'` in WHERE (before aggregation). Red flag: puts status filter in HAVING or filters after grouping. |
-| **HAVING usage** | Uses `HAVING SUM(amount) > 500` for post-aggregation filter. Red flag: tries `WHERE SUM(amount) > 500` (syntax error). |
+| **HAVING usage** | Uses `HAVING SUM(amount) > 500` for post-aggregation filter. If the candidate uses a subquery to avoid HAVING (see answer above), ask them to rewrite using HAVING. Red flag: tries `WHERE SUM(amount) > 500` directly on the grouped query (syntax error), or cannot produce a HAVING version when asked. |
 | **NULL handling** | Notices the NULL amount in the data and handles it -- either filters `amount IS NOT NULL` in WHERE, or uses `COUNT(amount)` instead of `COUNT(*)`. Bonus: explains why SUM ignores NULLs but COUNT(*) does not. Red flag: does not notice the NULL at all, even after seeing a suspicious order_count of 4 for customer 102. |
 | **Correct result** | Returns customers 101 and 102 with correct counts and totals. Red flag: includes cancelled orders in count/sum or wrong totals. |
 | **Code clarity** | Clean formatting, meaningful aliases. Messy or unreadable is not a dealbreaker on its own. |
