@@ -33,25 +33,19 @@ This rubric covers a structured SQL screening exercise in three stages. Start wi
 
 ### Expected Answers by Level
 
-**Junior**
-
-Articulates the basic distinction: WHERE filters rows before grouping, HAVING filters groups after aggregation. Can give a simple example using COUNT or SUM. Imprecise wording is acceptable if the core concept is correct.
-
-**Mid-Level**
-
-Explains the logical query execution order (FROM -> WHERE -> GROUP BY -> HAVING -> SELECT -> ORDER BY). Explains why WHERE cannot reference aggregates. Mentions the performance implication: WHERE reduces the dataset before aggregation, making it more efficient than equivalent filtering in HAVING.
-
-**Senior**
-
-Everything above, plus: discusses how query optimizers in modern engines (Spark, BigQuery, Snowflake) may rewrite HAVING conditions into WHERE when possible. May bring up predicate pushdown as a general optimization principle. May mention edge cases across SQL dialects or how window functions interact with these clauses.
+| Level | What to look for |
+|-------|-----------------|
+| **Junior** | Articulates the basic distinction: WHERE filters rows before grouping, HAVING filters groups after aggregation. Can give a simple example using COUNT or SUM. Imprecise wording is acceptable if the core concept is correct. |
+| **Mid-Level** | Explains the logical query execution order (FROM -> WHERE -> GROUP BY -> HAVING -> SELECT -> ORDER BY). Explains why WHERE cannot reference aggregates. Mentions the performance implication: WHERE reduces the dataset before aggregation, making it more efficient than equivalent filtering in HAVING. |
+| **Senior** | Everything above, plus: discusses how query optimizers in modern engines (Spark, BigQuery, Snowflake) may rewrite HAVING conditions into WHERE when possible. May bring up predicate pushdown as a general optimization principle. May mention edge cases across SQL dialects or how window functions interact with these clauses. |
 
 ### Evaluation
 
-| Criterion | Pass | Fail / Red Flag |
-|-----------|---------|---------------------|
-| **Core concept** | Correctly distinguishes row-level vs group-level filtering | Confuses the two or says they are interchangeable |
-| **Example quality** | Gives a concrete example without prompting | Cannot produce an example when asked |
-| **Depth (mid+)** | Mentions execution order or performance implications | Only gives textbook definition with no practical insight |
+| Criterion | What to look for |
+|-----------|-----------------|
+| **Core concept** | Correctly distinguishes row-level vs group-level filtering. Red flag: confuses the two or says they are interchangeable. |
+| **Example quality** | Gives a concrete example without prompting. Red flag: cannot produce an example when asked. |
+| **Depth (mid+)** | Mentions execution order or performance implications. Red flag: only gives textbook definition with no practical insight. |
 
 **Score:** [ ] Pass / [ ] Borderline / [ ] Fail
 
@@ -129,12 +123,12 @@ HAVING SUM(amount) > 500;
 
 ### Evaluation
 
-| Criterion | Pass | Fail / Red Flag |
-|-----------|---------|---------------------|
-| **WHERE usage** | Filters `status = 'completed'` in WHERE (before aggregation) | Puts status filter in HAVING or filters after grouping |
-| **HAVING usage** | Uses `HAVING SUM(amount) > 500` for post-aggregation filter | Tries `WHERE SUM(amount) > 500` (syntax error) |
-| **Correct result** | Returns customers 101 and 102 with correct counts and totals | Includes cancelled orders in count/sum or wrong totals |
-| **Code clarity** | Clean formatting, meaningful aliases | Messy or unreadable, but not a dealbreaker on its own |
+| Criterion | What to look for |
+|-----------|-----------------|
+| **WHERE usage** | Filters `status = 'completed'` in WHERE (before aggregation). Red flag: puts status filter in HAVING or filters after grouping. |
+| **HAVING usage** | Uses `HAVING SUM(amount) > 500` for post-aggregation filter. Red flag: tries `WHERE SUM(amount) > 500` (syntax error). |
+| **Correct result** | Returns customers 101 and 102 with correct counts and totals. Red flag: includes cancelled orders in count/sum or wrong totals. |
+| **Code clarity** | Clean formatting, meaningful aliases. Messy or unreadable is not a dealbreaker on its own. |
 
 **Score:** [ ] Pass / [ ] Borderline / [ ] Fail
 
@@ -250,14 +244,14 @@ ORDER BY region, total_spent DESC;
 
 ### Evaluation
 
-| Criterion | Pass | Fail / Red Flag |
-|-----------|---------|---------------------|
-| **Recognises two-pass problem** | Uses CTE or subquery; explains why single GROUP BY won't work | Tries to solve in one pass and gets stuck or produces wrong results |
-| **JOIN correctness** | Correctly joins orders to customers on customer_id | Incorrect join condition or misses the join entirely |
-| **WHERE placement** | Status and date filters in WHERE (row-level, before aggregation) | Puts row-level filters in HAVING |
-| **HAVING at both levels** | HAVING for >=EUR300 per customer, HAVING for >=2 customers per region | Misses one of the two aggregation levels |
-| **Date handling** | Correct date range; bonus if mentions BETWEEN inclusivity edge case | Wrong date range (e.g. includes April or misses March) |
-| **Code quality** | Uses CTE over nested subqueries (readability). Meaningful aliases. | Deeply nested subqueries that are hard to follow |
+| Criterion | What to look for |
+|-----------|-----------------|
+| **Recognises two-pass problem** | Uses CTE or subquery; explains why single GROUP BY won't work. Red flag: tries to solve in one pass and gets stuck or produces wrong results. |
+| **JOIN correctness** | Correctly joins orders to customers on customer_id. Red flag: incorrect join condition or misses the join entirely. |
+| **WHERE placement** | Status and date filters in WHERE (row-level, before aggregation). Red flag: puts row-level filters in HAVING. |
+| **HAVING at both levels** | HAVING for >=EUR300 per customer, HAVING for >=2 customers per region. Red flag: misses one of the two aggregation levels. |
+| **Date handling** | Correct date range; bonus if mentions BETWEEN inclusivity edge case. Red flag: wrong date range (e.g. includes April or misses March). |
+| **Code quality** | Uses CTE over nested subqueries (readability). Meaningful aliases. Deeply nested subqueries that are hard to follow is a minor concern. |
 
 **Score:** [ ] Pass / [ ] Borderline / [ ] Fail
 
