@@ -64,9 +64,35 @@ This rubric covers a structured SQL screening exercise in four stages. Start wit
 | 1        | 10          | 5%       |
 | 2        | 10          | 10%      |
 
+### DDL
+
+```sql
+CREATE TABLE orders_example (
+    order_id    INT PRIMARY KEY,
+    customer_id INT NOT NULL
+);
+
+CREATE TABLE promos (
+    promo_id    INT PRIMARY KEY,
+    customer_id INT NOT NULL,
+    discount    VARCHAR(10) NOT NULL
+);
+
+INSERT INTO orders_example (order_id, customer_id) VALUES
+(1, 10),
+(2, 10),
+(3, 10);
+
+INSERT INTO promos (promo_id, customer_id, discount) VALUES
+(1, 10, '5%'),
+(2, 10, '10%');
+```
+
+### Sample Query
+
 ```sql
 SELECT o.order_id, o.customer_id, p.promo_id, p.discount
-FROM orders o
+FROM orders_example o
 JOIN promos p ON o.customer_id = p.customer_id;
 ```
 
