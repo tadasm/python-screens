@@ -10,7 +10,7 @@ This rubric covers a structured SQL screening exercise in four stages. Start wit
 
 - **Stage 1 -- Screening Question** (5 min): Verbal question about WHERE vs HAVING. 
 - **Stage 2 -- Screening Question** (5 min): Verbal question about JOIN row expansion. 
-- **Stage 3 -- Exercise 1: Junior** (10-15 min): Write a query using a single table. Candidate uses their own DB tool.
+- **Stage 3 -- Exercise 1: Junior** (10-15 min): Write a query using a single table.
 - **Stage 4 -- Exercise 2: Mid-Level** (15-20 min): Write a query using two tables with two-level aggregation.
 
 ---
@@ -23,7 +23,7 @@ This rubric covers a structured SQL screening exercise in four stages. Start wit
 
 | Criterion | Strong answer | Weak answer |
 |-----------|---------------|-------------|
-| **Core concept** | Candidate says WHERE filters individual rows *before* grouping and HAVING filters groups *after* aggregation. They don't need to use these exact words -- any phrasing that shows they understand the timing difference is a pass. Imprecise wording is fine as long as the core idea is correct. | Candidate confuses the two, says they are interchangeable, or cannot explain which one runs first. If they get this wrong, stop here -- do not continue to the exercises. |
+| **Core concept** | Candidate says WHERE filters individual rows *before* grouping and HAVING filters groups *after* aggregation. They don't need to use these exact words -- any phrasing that shows they understand the timing difference is a pass. Imprecise wording is fine as long as the core idea is correct. | Candidate confuses the two, says they are interchangeable, or cannot explain which one runs first. |
 | **Example** | Candidate gives a concrete example without being asked, e.g. "WHERE filters out cancelled orders, HAVING keeps only groups with COUNT > 5." The example doesn't need to be runnable SQL -- a clear verbal description is enough. | Candidate cannot produce any example, even when prompted with "Can you give me a quick example of when you'd use each one?" |
 | **Execution order (mid+)** | Candidate explains the logical query execution order (FROM -> WHERE -> GROUP BY -> HAVING -> SELECT -> ORDER BY) and can explain *why* you can't put an aggregate like SUM() in a WHERE clause -- because WHERE runs before GROUP BY, so aggregates don't exist yet. Bonus: mentions that WHERE is more efficient because it reduces the dataset before the engine has to do the grouping work. | Candidate only recites "WHERE is for rows, HAVING is for groups" with no deeper reasoning. Acceptable for junior, but insufficient for mid-level -- a mid-level candidate should be able to explain the *why*, not just the *what*. |
 
@@ -99,7 +99,7 @@ Each of the 3 orders matches each of the 2 promos on `customer_id = 10`, produci
 
 | Criterion | Strong answer | Weak answer |
 |-----------|---------------|-------------|
-| **Core concept** | Candidate immediately says "yes" and explains that when multiple rows in table A match multiple rows in table B on the join key, every combination is produced. They might say "duplicates on the join key cause row multiplication" or use terms like "one-to-many" or "many-to-many" -- exact terminology doesn't matter as long as the mechanism is clear. | Candidate says "no, the result can't be larger than the bigger table" or says "it's always capped at 5,000." This is a fundamental misunderstanding of how JOINs work -- if they hold this position after a prompt, stop here. |
+| **Core concept** | Candidate immediately says "yes" and explains that when multiple rows in table A match multiple rows in table B on the join key, every combination is produced. They might say "duplicates on the join key cause row multiplication" or use terms like "one-to-many" or "many-to-many" -- exact terminology doesn't matter as long as the mechanism is clear. | Candidate says "no, the result can't be larger than the bigger table" or says "it's always capped at 5,000." This is a fundamental misunderstanding of how JOINs work. |
 | **Example** | Candidate describes a concrete scenario without being asked, e.g. "if a customer has 3 orders and 2 shipping addresses, joining on customer_id gives 6 rows for that customer." A verbal description is enough -- they don't need to write SQL. | Candidate cannot explain *when* row expansion would happen, even when prompted with "Can you describe a situation where this might occur?" |
 | **Depth (mid+)** | Candidate explains the Cartesian product per key value, or mentions real-world consequences like inflated aggregates and double-counting revenue. Bonus: mentions strategies to prevent it -- checking for duplicate keys before joining, using DISTINCT, or verifying the grain of each table. | Candidate gives only a vague "yes, because of duplicates" with no practical insight into why it matters or how to detect it. Acceptable for junior, but insufficient for mid-level. |
 
@@ -157,7 +157,7 @@ INSERT INTO orders (order_id, customer_id, order_date, product_category, amount,
 
 ### Expected Answer
 
-Note that order 11 has a NULL amount. `SUM` ignores NULLs, so total_spent is unaffected -- but `COUNT(*)` includes the NULL row, inflating the order count for customer 102 (4 instead of 3). The candidate should handle this by filtering NULLs in WHERE or by using `COUNT(amount)` instead of `COUNT(*)`.
+Note that order 11 has a NULL amount. `SUM` ignores NULLs, so total_spent is unaffected -- but `COUNT(*)` includes the NULL row, giving customer 102 an order_count of 4 instead of 3. Both counts are defensible: order 11 *is* a completed order (count = 4), it just has no recorded amount (count = 3). The real test is whether the candidate **notices the NULL and can reason about it**, not which count they choose. If they use `COUNT(*)` and get 4, ask: "Order 11 has a NULL amount -- does that affect your results?" A candidate who can explain the SUM/COUNT difference on the spot passes.
 
 ```sql
 SELECT
@@ -205,9 +205,9 @@ WHERE total_spent > 500;
 | customer_id | order_count | total_spent |
 |-------------|-------------|-------------|
 | 101 | 2 | 650.00 |
-| 102 | 3 | 660.00 |
+| 102 | 3 or 4 | 660.00 |
 
-**Common mistake** -- if the candidate uses `COUNT(*)` without filtering NULLs, customer 102 shows `order_count = 4` instead of 3. The total_spent is still correct (660.00) because SUM ignores NULLs.
+Customer 102's order_count depends on how the candidate handles the NULL amount in order 11. Both `3` (excludes the NULL row) and `4` (counts all completed orders) are acceptable -- see NULL handling criterion below.
 
 ### Evaluation
 
@@ -215,7 +215,7 @@ WHERE total_spent > 500;
 |-----------|---------------|-------------|
 | **WHERE usage** | Candidate's query has `WHERE status = 'completed'` (or equivalent) so that cancelled orders are excluded *before* any grouping happens. This is the correct place for row-level filters -- it means the aggregation only sees the rows that matter. | Candidate puts the status filter inside HAVING (e.g. `HAVING status = 'completed'`) or tries to filter cancelled orders after the aggregation. Look for this in their query: if `status` appears after GROUP BY instead of before it, that's the problem. |
 | **HAVING usage** | Candidate uses `HAVING SUM(amount) > 500` to keep only groups whose total exceeds 500. This is the correct clause for filtering on aggregated values. If the candidate instead wraps the query in a subquery and filters with `WHERE total_spent > 500` in the outer query, that's a valid alternative -- but ask them: "Can you rewrite this using HAVING?" They should be able to. | Candidate writes `WHERE SUM(amount) > 500` directly in the main query -- this will throw a syntax error because you can't use aggregate functions in WHERE. If they get this error and can't figure out why, or if they can't rewrite their subquery approach using HAVING when asked, that's a clear gap. |
-| **NULL handling** | Row 11 in the data has a NULL amount. A strong candidate notices this and handles it in one of two ways: (1) adds `AND amount IS NOT NULL` to the WHERE clause, or (2) uses `COUNT(amount)` instead of `COUNT(*)` in the SELECT. Either approach is correct. Bonus: candidate can explain *why* -- `SUM` skips NULLs automatically so the total is fine, but `COUNT(*)` counts all rows including the NULL one, which inflates the order count. How to spot this during the exercise: if customer 102 shows `order_count = 4`, the candidate missed the NULL. The correct count is 3. | Candidate doesn't notice the NULL at all. Their query returns `order_count = 4` for customer 102 and they don't question it. If you see this, you can prompt: "Take a look at the order count for customer 102 -- does that look right?" If they still can't identify the issue, that's a concern. Not a dealbreaker for junior if everything else is solid, but it suggests they don't inspect their own results carefully. |
+| **NULL handling** | Row 11 has a NULL amount. The question says "number of orders" which is genuinely ambiguous -- order 11 *is* a completed order, it just has no recorded amount. A strong candidate **notices the NULL unprompted** and either: (1) filters it out (`AND amount IS NOT NULL` or `COUNT(amount)`), or (2) keeps it (`COUNT(*)`) and explains why. Either interpretation is correct. The key signal is awareness: can they explain that `SUM` skips NULLs but `COUNT(*)` doesn't? If customer 102 shows `order_count = 4` and the candidate proactively says "that includes a NULL-amount row -- I'm counting it because it's still a completed order," that's a strong answer. | Candidate doesn't notice the NULL at all. Their query returns `order_count = 4` for customer 102 and they don't question it. If you see this, prompt: "Order 11 has a NULL amount -- does that affect your results?" If they can explain the SUM/COUNT difference, that's a pass. If they can't identify how NULLs interact with aggregate functions even after the prompt, that's a concern. Not a dealbreaker for junior if everything else is solid, but it suggests they don't reason carefully about data quality. |
 | **Correct result** | The query returns exactly two rows: customer 101 (order_count = 2, total_spent = 650.00) and customer 102 (order_count = 3, total_spent = 660.00). No other customers should appear. Customer 103 spent only 360.00 on completed orders (below 500) and customer 104 spent 350.00 (also below). | Result includes customers who shouldn't be there, or the totals are wrong. Common mistakes: including cancelled orders in the sum (inflates totals), forgetting the status filter entirely, or having the wrong HAVING threshold. If the candidate gets the wrong answer, ask them to walk through the data row by row -- this helps you see whether the logic is flawed or they just made a typo. |
 | **Code clarity** | Clean formatting, meaningful column aliases (e.g. `order_count`, `total_spent` rather than `count1` or unnamed columns). Query is easy to read at a glance. | Messy formatting, unclear or missing aliases, hard to follow. Not a dealbreaker on its own -- some strong candidates just write sloppy SQL under time pressure. Judge this lightly compared to the other criteria. |
 
@@ -302,13 +302,14 @@ WITH customer_region_spend AS (
     SELECT
         c.region,
         c.customer_name,
+        c.customer_id,
         SUM(o.amount) AS total_spent
     FROM orders o
     JOIN customers c ON o.customer_id = c.customer_id
     WHERE o.status = 'completed'
       AND o.order_date >= '2024-01-01'
       AND o.order_date < '2024-04-01'
-    GROUP BY c.region, c.customer_name
+    GROUP BY c.region, c.customer_name, c.customer_id
     HAVING SUM(o.amount) >= 300
 ),
 with_count AS (
@@ -334,13 +335,14 @@ WITH customer_spend AS (
     SELECT
         c.region,
         c.customer_name,
+        c.customer_id,
         SUM(o.amount) AS total_spent
     FROM orders o
     JOIN customers c ON o.customer_id = c.customer_id
     WHERE o.status = 'completed'
       AND o.order_date >= '2024-01-01'
       AND o.order_date < '2024-04-01'
-    GROUP BY c.region, c.customer_name
+    GROUP BY c.region, c.customer_name, c.customer_id
     HAVING SUM(o.amount) >= 300
 ),
 qualifying_regions AS (
@@ -365,13 +367,14 @@ FROM (
     SELECT
         c.region,
         c.customer_name,
+        c.customer_id,
         SUM(o.amount) AS total_spent
     FROM orders o
     JOIN customers c ON o.customer_id = c.customer_id
     WHERE o.status = 'completed'
       AND o.order_date >= '2024-01-01'
       AND o.order_date < '2024-04-01'
-    GROUP BY c.region, c.customer_name
+    GROUP BY c.region, c.customer_name, c.customer_id
     HAVING SUM(o.amount) >= 300
 ) AS customer_spend
 WHERE region IN (
@@ -379,14 +382,14 @@ WHERE region IN (
     FROM (
         SELECT
             c.region,
-            c.customer_name,
+            c.customer_id,
             SUM(o.amount) AS total_spent
         FROM orders o
         JOIN customers c ON o.customer_id = c.customer_id
         WHERE o.status = 'completed'
           AND o.order_date >= '2024-01-01'
           AND o.order_date < '2024-04-01'
-        GROUP BY c.region, c.customer_name
+        GROUP BY c.region, c.customer_id
         HAVING SUM(o.amount) >= 300
     ) AS qualified
     GROUP BY region
@@ -441,6 +444,6 @@ ORDER BY region, total_spent DESC;
 | **Recognises two-pass problem** | This question cannot be solved with a single GROUP BY. The candidate needs to first group by customer to find who spent >=EUR300, and then group by region to count how many customers qualified. A strong candidate recognises this and uses a CTE (`WITH ... AS`) or a subquery to break the problem into two steps. They should be able to explain *why* a single pass won't work -- you can't filter on "number of qualifying customers per region" and "total spend per customer" in the same GROUP BY. | Candidate tries to solve everything in one query with a single GROUP BY and either gets stuck or produces wrong results. If they're struggling, you can prompt: "Can this be done in one GROUP BY, or do you need to aggregate twice?" If they still can't see the two-step structure, that's a significant gap for mid-level. |
 | **JOIN correctness** | Candidate joins orders to customers using `JOIN customers c ON o.customer_id = c.customer_id` (or equivalent). This is a straightforward equi-join -- look for the correct column on both sides. The join should be INNER JOIN (or just JOIN, which defaults to inner). A LEFT JOIN would also produce correct results here since all customer_ids in orders exist in customers, but INNER is more appropriate. | Candidate joins on the wrong columns, uses a cross join by accident (no ON clause), or forgets the join entirely and tries to query both tables separately. If you see a query that references `customers.region` without any JOIN to the customers table, that's the issue. |
 | **WHERE placement** | Candidate filters `status = 'completed'` and the date range in the WHERE clause, *before* any aggregation. This is the same principle tested in Stage 3 -- row-level conditions belong in WHERE so that only relevant rows enter the GROUP BY. Look for both the status filter and the date filter appearing before GROUP BY in the query. | Candidate puts `status = 'completed'` or the date filter inside HAVING. This is the same mistake from Stage 3 -- if they didn't learn from it, that's a concern. Technically HAVING can filter on non-aggregated columns in some databases, but it's wrong in principle and may produce unexpected results. |
-| **HAVING at both levels** | The query needs HAVING in two places: (1) `HAVING SUM(amount) >= 300` to find customers who spent enough, and (2) `HAVING COUNT(*) >= 2` to find regions with enough qualifying customers. In a CTE approach, the first HAVING is inside the CTE and the second is in the outer query (or a subquery). Both must be present. A strong candidate handles both without prompting. | Candidate gets one level of aggregation but misses the other. Typical mistake: they correctly find customers who spent >=EUR300 but then return *all* of them without checking whether the region has >=2 qualifying customers. If their result includes Dave (South, 350.00), they missed the second filter -- South only has 1 qualifying customer and should be excluded. |
+| **Both filters present** | The query must enforce two filters: (1) per-customer spend >= EUR300, and (2) per-region qualifying customer count >= 2. How these are expressed depends on the approach -- `HAVING` at both levels in a CTE+subquery, `HAVING` + `WHERE` on a window function result, or two `HAVING` clauses in separate CTEs are all valid. The key is that both filters exist and are applied correctly. A strong candidate handles both without prompting. | Candidate gets one level of filtering but misses the other. Typical mistake: they correctly find customers who spent >=EUR300 but then return *all* of them without checking whether the region has >=2 qualifying customers. If their result includes Dave (South, 350.00), they missed the second filter -- South only has 1 qualifying customer and should be excluded. |
 | **Date handling** | Candidate correctly restricts to Q1 2024 (January through March). The preferred pattern is `>= '2024-01-01' AND < '2024-04-01'` -- this "half-open interval" is a best practice because it works correctly whether the column is a DATE or a TIMESTAMP. Using `BETWEEN '2024-01-01' AND '2024-03-31'` is also acceptable here since the column is DATE. Do not penalise either approach. | Candidate uses the wrong date range -- for example, includes April data (order 9) or misses March. How to spot this: if Bob appears in the result (he has an April order worth EUR500), the date filter is probably wrong. You can also check: does the candidate's range include `2024-03-31`? If they wrote `< '2024-03-01'`, they've cut off all of March. |
 | **Code quality** | Candidate uses a CTE (`WITH ... AS`) to make the two-step logic readable. Each step has a clear name and the overall query reads top to bottom. Meaningful aliases throughout. | Candidate writes deeply nested subqueries where the same logic is repeated in multiple places, making it hard to follow. This is a minor concern on its own -- the logic may still be correct. If they use nested subqueries, it's a good prompt to ask: "Do you know a way to avoid repeating that inner query?" This leads to CTEs and tests whether they know the syntax. |
